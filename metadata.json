@@ -1,0 +1,6 @@
+{
+  "name": "Inventaris Digital - SMP Kusuma Bangsa Bogor",
+  "description": "Aplikasi manajemen dan scanner barcode inventaris digital aset sekolah SMP Kusuma Bangsa Bogor dengan fitur pencatatan, barcode generator, scanner kamera, manajemen pengguna, dan pengaturan identitas sekolah.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

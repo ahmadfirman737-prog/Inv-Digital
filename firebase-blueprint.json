@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "School inventory asset item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the inventory item",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the asset/item",
+          "maxLength": 200
+        },
+        "serial": {
+          "type": "string",
+          "description": "Serial number or barcode identifier",
+          "maxLength": 100
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of procurement"
+        },
+        "budget": {
+          "type": "string",
+          "description": "Source of budget",
+          "maxLength": 100
+        },
+        "spec": {
+          "type": "string",
+          "description": "Technical specification of the asset",
+          "maxLength": 2000
+        },
+        "photo": {
+          "type": "string",
+          "description": "Photo URL of the asset",
+          "maxLength": 500000
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the asset",
+          "maxLength": 100
+        },
+        "condition": {
+          "type": "string",
+          "description": "Condition status",
+          "maxLength": 50
+        },
+        "location": {
+          "type": "string",
+          "description": "Physical room or location",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "name", "serial", "year", "budget", "spec"]
+    },
+    "SchoolSettings": {
+      "title": "SchoolSettings",
+      "description": "School institution branding and profile configuration",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full formal name of the school",
+          "maxLength": 200
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Short school name for headers and badges",
+          "maxLength": 100
+        },
+        "address": {
+          "type": "string",
+          "description": "Full school street address",
+          "maxLength": 1000
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number",
+          "maxLength": 50
+        },
+        "email": {
+          "type": "string",
+          "description": "Official email address",
+          "maxLength": 100
+        },
+        "principalName": {
+          "type": "string",
+          "description": "School principal / person in charge name",
+          "maxLength": 100
+        },
+        "logo": {
+          "type": "string",
+          "description": "Logo URL or base64 data string",
+          "maxLength": 500000
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Update timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["name", "shortName", "address"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User account for managing the inventory system",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the user",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user",
+          "maxLength": 100
+        },
+        "username": {
+          "type": "string",
+          "description": "Login username",
+          "maxLength": 50
+        },
+        "password": {
+          "type": "string",
+          "description": "Hashed or stored authentication password credential",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "description": "User role: Administrator or Staff",
+          "maxLength": 50
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account creation timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "name", "username", "password", "role"]
+    }
+  },
+  "firestore": {
+    "/inventory_items/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Collection of all school inventory items"
+    },
+    "/school_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SchoolSettings" },
+      "description": "School profile and institutional configuration"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "System operators and administrator accounts"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #009B4C;
+  --color-brand-hover: #008742;
+  --color-brand-dark: #007338;
+  --color-brand-darker: #004D25;
+  --color-brand-light: #e6f6ee;
+  --color-brand-lightest: #f0faf4;
+  --color-brand-border: #a4e2c0;
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Rules for Barcode Labels */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-sticker, #printable-sticker * {
+    visibility: visible;
+  }
+  #printable-sticker {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px !important;
+    border: 2px solid #000 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
