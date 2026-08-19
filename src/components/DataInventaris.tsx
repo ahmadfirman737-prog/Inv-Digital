@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { InventoryItem, SchoolSettings } from '../types';
-import { BarcodeRenderer, downloadBarcodeAsPng } from './BarcodeRenderer';
+import { BarcodeRenderer, downloadBarcodeAsPng, downloadLabel12x8AsPng } from './BarcodeRenderer';
 import {
   Search,
   Download,
@@ -16,7 +16,9 @@ import {
   Calendar,
   X,
   FileSpreadsheet,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  Maximize2
 } from 'lucide-react';
 
 interface DataInventarisProps {
@@ -44,6 +46,7 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [printingItem, setPrintingItem] = useState<InventoryItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -62,11 +65,31 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
   });
 
   const handleDownloadBarcode = async (item: InventoryItem) => {
-    const success = await downloadBarcodeAsPng(item.serial, `Barcode_${item.serial}_${item.name.replace(/\s+/g, '_')}.png`);
+    setIsDownloading(true);
+    const success = await downloadBarcodeAsPng(
+      item.serial,
+      `Barcode_12x8cm_${item.serial}_${item.name.replace(/\s+/g, '_')}.png`
+    );
+    setIsDownloading(false);
     if (success) {
-      showToast(`Barcode ${item.serial} berhasil diunduh!`, 'success');
+      showToast(`Barcode 12x8 cm (${item.serial}) berhasil diunduh!`, 'success');
     } else {
       showToast('Gagal mengunduh barcode', 'error');
+    }
+  };
+
+  const handleDownloadFullLabel = async (item: InventoryItem) => {
+    setIsDownloading(true);
+    const success = await downloadLabel12x8AsPng(
+      item,
+      schoolSettings,
+      `Label_Stiker_12x8cm_${item.serial}_${item.name.replace(/\s+/g, '_')}.png`
+    );
+    setIsDownloading(false);
+    if (success) {
+      showToast(`Label Stiker 12x8 cm (${item.serial}) berhasil diunduh!`, 'success');
+    } else {
+      showToast('Gagal mengunduh label stiker', 'error');
     }
   };
 
@@ -203,6 +226,7 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
               <option value="All">Semua Sumber Anggaran</option>
               <option value="BOS Pusat">BOS Pusat</option>
               <option value="BOS Daerah">BOS Daerah</option>
+              <option value="Bantuan Pemerintah Pusat">Bantuan Pemerintah Pusat</option>
               <option value="Yayasan">Yayasan</option>
               <option value="Sumbangan / Hibah">Sumbangan / Hibah</option>
               <option value="DAK">DAK</option>
@@ -372,19 +396,22 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
                       type="button"
                       id={`btn-download-barcode-${item.id}`}
                       onClick={() => handleDownloadBarcode(item)}
-                      className="py-2 px-3 text-xs bg-white border border-slate-200 hover:border-[#a4e2c0] hover:bg-[#e6f6ee] text-slate-700 hover:text-[#009B4C] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 font-semibold cursor-pointer"
+                      disabled={isDownloading}
+                      className="py-2 px-2.5 text-xs bg-white border border-slate-200 hover:border-[#a4e2c0] hover:bg-[#e6f6ee] text-slate-700 hover:text-[#009B4C] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 font-semibold cursor-pointer disabled:opacity-50"
+                      title="Unduh file barcode resolusi tinggi ukuran 12x8 cm"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Unduh PNG</span>
+                      <span>Unduh 12x8</span>
                     </button>
                     <button
                       type="button"
                       id={`btn-print-sticker-${item.id}`}
                       onClick={() => handlePrintSticker(item)}
-                      className="py-2 px-3 text-xs bg-white border border-slate-200 hover:border-[#a4e2c0] hover:bg-[#e6f6ee] text-slate-700 hover:text-[#009B4C] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 font-semibold cursor-pointer"
+                      className="py-2 px-2.5 text-xs bg-[#e6f6ee] border border-[#a4e2c0] hover:bg-[#d0f0df] text-[#009B4C] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 font-bold cursor-pointer"
+                      title="Buka pratinjau dan cetak label ukuran 12x8 cm"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                      <span>Label Stiker</span>
+                      <span>Label 12x8</span>
                     </button>
                   </div>
                 </div>
@@ -449,9 +476,10 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDownloadBarcode(item)}
-                          className="text-[11px] text-[#009B4C] hover:text-[#007A3B] font-bold hover:underline"
+                          className="text-[11px] text-[#009B4C] hover:text-[#007A3B] font-bold hover:underline cursor-pointer"
+                          title="Unduh Barcode (12x8 cm PNG)"
                         >
-                          Unduh
+                          Unduh 12x8
                         </button>
                       </div>
                     </td>
@@ -461,7 +489,7 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
                           type="button"
                           onClick={() => handlePrintSticker(item)}
                           className="p-2 text-slate-600 hover:text-[#009B4C] bg-slate-100 hover:bg-[#e6f6ee] rounded-lg transition-colors cursor-pointer"
-                          title="Cetak Label"
+                          title="Cetak & Unduh Label 12x8 cm"
                         >
                           <Printer className="w-4 h-4" />
                         </button>
@@ -550,6 +578,7 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
                   >
                     <option value="BOS Pusat">BOS Pusat</option>
                     <option value="BOS Daerah">BOS Daerah</option>
+                    <option value="Bantuan Pemerintah Pusat">Bantuan Pemerintah Pusat</option>
                     <option value="Yayasan">Yayasan</option>
                     <option value="Sumbangan / Hibah">Sumbangan / Hibah</option>
                     <option value="DAK">DAK</option>
@@ -641,62 +670,132 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
         </div>
       )}
 
-      {/* Print Sticker Label Modal */}
+      {/* Print Sticker Label Modal (12 x 8 cm) */}
       {printingItem && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
-                <Printer className="w-5 h-5 text-blue-600" />
-                <span>Pratinjau Label Stiker Inventaris</span>
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 my-8">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-[#e6f6ee] text-[#009B4C] rounded-xl border border-[#a4e2c0]">
+                  <Printer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                    Label Stiker Inventaris (12 × 8 cm)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Format ukuran cetak dan unduh standar 12 cm × 8 cm
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setPrintingItem(null)}
-                className="p-1 text-slate-400 hover:text-slate-700"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Label preview box (printable format) */}
-            <div id="printable-sticker" className="border-2 border-slate-800 p-4 rounded-2xl bg-white text-slate-900 flex flex-col items-center text-center shadow-xs">
-              <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1.5 w-full">
-                {schoolSettings.name}
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1 uppercase font-semibold">
-                PROPERTI INVENTARIS RESMI
-              </p>
-              <h4 className="font-extrabold text-sm text-slate-900 mt-1 mb-2">
-                {printingItem.name}
-              </h4>
-              
-              <div className="bg-white py-1 px-3 border border-slate-200 rounded-lg my-1">
-                <BarcodeRenderer value={printingItem.serial} height={45} width={1.8} fontSize={12} />
-              </div>
+            {/* Label preview box formatted exactly for 12x8 cm standard layout */}
+            <div className="bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200 flex flex-col items-center">
+              <div
+                id="printable-sticker"
+                className="w-full max-w-[480px] bg-white text-slate-900 border-2 border-black rounded-none shadow-sm flex flex-col justify-between overflow-hidden"
+                style={{ aspectRatio: '12 / 8' }}
+              >
+                {/* Header Banner */}
+                <div className="bg-[#009B4C] text-white p-2.5 text-center border-b-2 border-black flex flex-col items-center justify-center">
+                  <h5 className="font-black text-xs sm:text-sm tracking-wider uppercase leading-tight">
+                    {schoolSettings.name}
+                  </h5>
+                  <p className="text-[9px] sm:text-[10px] text-emerald-100 font-bold uppercase tracking-widest mt-0.5">
+                    SISTEM INVENTARIS & ASET RESMI
+                  </p>
+                </div>
 
-              <div className="flex justify-between w-full text-[10px] font-semibold text-slate-600 mt-2 border-t border-slate-200 pt-1.5">
-                <span>Sumber: {printingItem.budget}</span>
-                <span>Tahun: {printingItem.year}</span>
-                <span>Lokasi: {printingItem.location || 'Sekolah'}</span>
+                {/* Body Content */}
+                <div className="p-3 sm:p-4 flex-1 flex flex-col items-center justify-between text-center bg-white">
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-slate-900 leading-snug line-clamp-1">
+                      {printingItem.name}
+                    </h4>
+                  </div>
+
+                  {/* High Quality Barcode */}
+                  <div className="my-1 py-1 px-3 bg-white w-full flex justify-center overflow-hidden">
+                    <BarcodeRenderer value={printingItem.serial} height={46} width={1.8} fontSize={12} />
+                  </div>
+
+                  {/* Metadata Grid */}
+                  <div className="w-full border-t-2 border-black pt-2 grid grid-cols-3 gap-1 text-left text-[9px] sm:text-[10px]">
+                    <div>
+                      <span className="text-slate-500 block font-bold text-[8px] uppercase">Sumber:</span>
+                      <span className="font-black text-slate-900 truncate block">{printingItem.budget}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block font-bold text-[8px] uppercase">Tahun:</span>
+                      <span className="font-black text-slate-900 block">{printingItem.year}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block font-bold text-[8px] uppercase">Kondisi:</span>
+                      <span className="font-black text-slate-900 block">{printingItem.condition || 'Baik'}</span>
+                    </div>
+                  </div>
+
+                  <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] text-slate-500 border-t border-dashed border-slate-300 pt-1 mt-1 font-semibold">
+                    <span className="truncate">Lokasi: {printingItem.location || 'Sekolah'}</span>
+                    <span className="text-[#009B4C] font-bold">Ukuran: 12 × 8 cm</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setPrintingItem(null)}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
-              >
-                Tutup
-              </button>
-              <button
-                type="button"
-                onClick={handleExecutePrint}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                Cetak Label Stiker
-              </button>
+            {/* Action Buttons Bar */}
+            <div className="mt-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  id="btn-modal-download-barcode"
+                  disabled={isDownloading}
+                  onClick={() => handleDownloadBarcode(printingItem)}
+                  className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Unduh Barcode PNG ukuran 12x8 cm"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span>Unduh Barcode (12x8)</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="btn-modal-download-full-label"
+                  disabled={isDownloading}
+                  onClick={() => handleDownloadFullLabel(printingItem)}
+                  className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Unduh Label Stiker Lengkap 12x8 cm siap cetak (300 DPI)"
+                >
+                  <Download className="w-4 h-4 text-blue-600" />
+                  <span>Unduh Label Stiker (12x8 cm)</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPrintingItem(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  id="btn-modal-execute-print"
+                  onClick={handleExecutePrint}
+                  className="px-5 py-2.5 bg-[#009B4C] hover:bg-[#008742] text-white rounded-xl text-xs font-bold shadow-md shadow-[#009B4C]/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak (12 × 8 cm)</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

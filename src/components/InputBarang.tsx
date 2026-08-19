@@ -227,6 +227,7 @@ export const InputBarang: React.FC<InputBarangProps> = ({
               >
                 <option value="BOS Pusat">BOS Pusat</option>
                 <option value="BOS Daerah">BOS Daerah</option>
+                <option value="Bantuan Pemerintah Pusat">Bantuan Pemerintah Pusat</option>
                 <option value="Yayasan">Yayasan</option>
                 <option value="Sumbangan / Hibah">Sumbangan / Hibah</option>
                 <option value="DAK (Dana Alokasi Khusus)">DAK (Dana Alokasi Khusus)</option>

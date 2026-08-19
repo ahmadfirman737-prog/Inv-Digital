@@ -147,20 +147,22 @@ export default function App() {
     });
 
     setInventoryItems((prev) =>
-      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+      prev.map((item) => (String(item.id) === String(updatedItem.id) ? updatedItem : item))
     );
   };
 
-  const handleDeleteItem = (id: string | number) => {
-    const target = inventoryItems.find((i) => i.id === id);
+  const handleDeleteItem = async (id: string | number) => {
+    const target = inventoryItems.find((i) => String(i.id) === String(id));
 
-    // Delete from Firestore Realtime
-    deleteInventoryItemFromFirestore(id).catch((err) => {
+    // Delete immediately from Firestore Realtime Cloud Database
+    try {
+      await deleteInventoryItemFromFirestore(id);
+      setInventoryItems((prev) => prev.filter((item) => String(item.id) !== String(id)));
+      showToast(`Barang ${target?.name || ''} telah dihapus dari cloud realtime.`, 'info');
+    } catch (err) {
       console.error('Error deleting item from Firestore:', err);
-    });
-
-    setInventoryItems((prev) => prev.filter((item) => item.id !== id));
-    showToast(`Barang ${target?.name || ''} telah dihapus dari cloud.`, 'info');
+      showToast('Gagal menghapus barang dari cloud', 'error');
+    }
   };
 
   // User Handlers (Realtime Firestore)

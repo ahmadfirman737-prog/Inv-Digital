@@ -348,18 +348,27 @@ export const ScanBarcode: React.FC<ScanBarcodeProps> = ({ items, showToast }) =>
                     </p>
                   </div>
 
-                  {/* Barcode representation */}
+                  {/* Barcode representation 12x8 cm */}
                   <div className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3">
                     <div className="overflow-hidden">
                       <BarcodeRenderer value={scannedItem.serial} height={32} width={1.2} fontSize={10} />
                     </div>
                     <button
                       type="button"
-                      onClick={() => downloadBarcodeAsPng(scannedItem.serial)}
+                      onClick={async () => {
+                        const success = await downloadBarcodeAsPng(
+                          scannedItem.serial,
+                          `Barcode_12x8cm_${scannedItem.serial}_${scannedItem.name.replace(/\s+/g, '_')}.png`
+                        );
+                        if (success) {
+                          showToast(`Barcode 12x8 cm (${scannedItem.serial}) berhasil diunduh!`, 'success');
+                        }
+                      }}
                       className="px-3 py-2 bg-slate-100 hover:bg-[#e6f6ee] hover:text-[#009B4C] text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer flex-shrink-0"
+                      title="Unduh barcode resolusi tinggi ukuran 12x8 cm"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Unduh</span>
+                      <span>Unduh 12x8</span>
                     </button>
                   </div>
 

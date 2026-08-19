@@ -91,23 +91,43 @@ export function subscribeToInventory(
 
   const unsubscribe = onSnapshot(
     collRef,
-    (snapshot) => {
+    async (snapshot) => {
       if (snapshot.empty) {
-        // Seed default items into Firestore if brand new database
-        seedDefaultInventory().catch(console.error);
-        onData(DEFAULT_INVENTORY_ITEMS);
+        // Check if database was already bootstrapped before
+        try {
+          const bootstrapDocRef = doc(db, 'system_metadata', 'bootstrap');
+          const metaSnap = await getDocFromServer(bootstrapDocRef);
+          if (!metaSnap.exists()) {
+            // First time ever: seed initial demo inventory and mark as bootstrapped
+            await seedDefaultInventory();
+            await setDoc(bootstrapDocRef, { initialized: true, createdAt: new Date().toISOString() });
+            onData(DEFAULT_INVENTORY_ITEMS);
+            return;
+          }
+        } catch {
+          // If error reading metadata, treat empty as truly empty
+        }
+        // Legitimate empty list (all items deleted)
+        onData([]);
         return;
       }
+
       const items: InventoryItem[] = [];
       snapshot.forEach((docSnap) => {
-        items.push(docSnap.data() as InventoryItem);
+        const itemData = docSnap.data() as InventoryItem;
+        items.push({
+          ...itemData,
+          id: itemData.id || docSnap.id
+        });
       });
+
       // Sort newest created first
       items.sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return timeB - timeA;
       });
+
       onData(items);
     },
     (error) => {

@@ -9,7 +9,7 @@ export interface User {
   createdAt?: string;
 }
 
-export type BudgetSource = 'BOS Pusat' | 'BOS Daerah' | 'Yayasan' | 'Sumbangan / Hibah' | 'DAK' | 'Kas Sekolah' | string;
+export type BudgetSource = 'BOS Pusat' | 'BOS Daerah' | 'Bantuan Pemerintah Pusat' | 'Yayasan' | 'Sumbangan / Hibah' | 'DAK' | 'DAK (Dana Alokasi Khusus)' | 'Kas Sekolah' | string;
 export type ItemCondition = 'Baik' | 'Rusak Ringan' | 'Rusak Berat';
 
 export interface InventoryItem {

@@ -22,6 +22,11 @@ service cloud.firestore {
       allow read, write: if isValidId(userId);
     }
 
+    // System metadata collection
+    match /system_metadata/{metaId} {
+      allow read, write: if isValidId(metaId);
+    }
+
     // Test connection doc
     match /test/{testId} {
       allow read, write: if true;
