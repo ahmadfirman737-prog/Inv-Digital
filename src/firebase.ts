@@ -166,12 +166,50 @@ export function subscribeToInventory(
   return unsubscribe;
 }
 
+export async function fetchInventoryFromFirestore(): Promise<InventoryItem[]> {
+  const path = 'inventory_items';
+  try {
+    const collRef = collection(db, path);
+    const snapshot = await getDocs(collRef);
+    const items: InventoryItem[] = [];
+    snapshot.forEach((docSnap) => {
+      const itemData = docSnap.data() as Partial<InventoryItem>;
+      const itemId = String(itemData.id || docSnap.id);
+      if (!['inv-1', 'inv-2', 'inv-3', 'inv-4', 'inv-5'].includes(itemId)) {
+        items.push({
+          id: itemId,
+          name: itemData.name || 'Barang Tanpa Nama',
+          serial: itemData.serial || itemId,
+          year: Number(itemData.year) || new Date().getFullYear(),
+          budget: itemData.budget || 'BOS Pusat',
+          spec: itemData.spec || '',
+          photo: itemData.photo || '',
+          category: itemData.category || 'Umum',
+          condition: itemData.condition || 'Baik',
+          location: itemData.location || 'Sekolah',
+          createdAt: itemData.createdAt || new Date().toISOString()
+        });
+      }
+    });
+    items.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+    return items;
+  } catch (error) {
+    console.error('Failed to fetch inventory from Firestore:', error);
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
 export async function saveInventoryItemToFirestore(item: InventoryItem): Promise<void> {
   const sanitized = sanitizeInventoryItem(item);
   const path = `inventory_items/${sanitized.id}`;
   try {
     const docRef = doc(db, 'inventory_items', sanitized.id);
     await setDoc(docRef, sanitized, { merge: true });
+    console.log(`[Firestore Realtime] Item ${sanitized.id} successfully written to Cloud.`);
   } catch (error) {
     console.error('Failed to save inventory item to Firestore:', error);
     handleFirestoreError(error, OperationType.WRITE, path);

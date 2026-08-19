@@ -18,7 +18,8 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Sparkles,
-  Maximize2
+  Maximize2,
+  RefreshCw
 } from 'lucide-react';
 
 interface DataInventarisProps {
@@ -28,6 +29,8 @@ interface DataInventarisProps {
   onUpdateItem: (item: InventoryItem) => void;
   onNavigateToInput: () => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+  onSyncCloud?: () => void;
+  isSyncing?: boolean;
 }
 
 export const DataInventaris: React.FC<DataInventarisProps> = ({
@@ -36,7 +39,9 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
   onDeleteItem,
   onUpdateItem,
   onNavigateToInput,
-  showToast
+  showToast,
+  onSyncCloud,
+  isSyncing = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBudget, setSelectedBudget] = useState('All');
@@ -167,6 +172,20 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
             <span id="total-items" className="text-base font-black">{items.length}</span>
             <span>Barang</span>
           </div>
+
+          {onSyncCloud && (
+            <button
+              type="button"
+              id="btn-sync-cloud-list"
+              onClick={onSyncCloud}
+              disabled={isSyncing}
+              className="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-[#009B4C] border border-[#a4e2c0] rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              title="Sinkronkan data dengan Cloud Database Firebase secara manual"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isSyncing ? 'Menyinkronkan...' : 'Sinkron Cloud'}</span>
+            </button>
+          )}
 
           <button
             type="button"

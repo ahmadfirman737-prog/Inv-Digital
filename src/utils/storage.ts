@@ -35,16 +35,16 @@ export function getStoredInventory(): InventoryItem[] {
   try {
     const raw = localStorage.getItem('kb_inventory_items');
     if (!raw) {
-      localStorage.setItem('kb_inventory_items', JSON.stringify([]));
       return [];
     }
     const parsed = JSON.parse(raw);
-    // If it contains legacy mock items (id starting with 'inv-'), purge them
-    if (Array.isArray(parsed) && parsed.some((item) => String(item.id).startsWith('inv-'))) {
-      localStorage.setItem('kb_inventory_items', JSON.stringify([]));
+    if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed;
+    // Filter out old hardcoded dummy items if any exist
+    return parsed.filter(
+      (item) => !['inv-1', 'inv-2', 'inv-3', 'inv-4', 'inv-5'].includes(String(item.id))
+    );
   } catch {
     return [];
   }

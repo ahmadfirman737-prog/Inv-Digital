@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActiveMenu, User } from '../types';
-import { Menu, ShieldCheck, UserCheck } from 'lucide-react';
+import { Menu, ShieldCheck, UserCheck, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   activeMenu: ActiveMenu;
@@ -8,6 +8,8 @@ interface HeaderProps {
   onOpenMobileSidebar: () => void;
   totalItemsCount: number;
   isFirebaseSyncing?: boolean;
+  onSyncCloud?: () => void;
+  isSyncing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,7 +17,9 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenMobileSidebar,
   totalItemsCount,
-  isFirebaseSyncing = true
+  isFirebaseSyncing = true,
+  onSyncCloud,
+  isSyncing = false
 }) => {
   const getPageTitle = (menu: ActiveMenu) => {
     switch (menu) {
@@ -74,7 +78,20 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
-        {isFirebaseSyncing && (
+        {onSyncCloud && (
+          <button
+            id="btn-header-sync-cloud"
+            onClick={onSyncCloud}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#e6f6ee] hover:bg-[#d5f0e1] text-[#009B4C] border border-[#a4e2c0] rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+            title="Klik untuk menyinkronkan data terbaru dari Cloud Firebase"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isSyncing ? 'Menyinkronkan...' : 'Sinkron Cloud'}</span>
+          </button>
+        )}
+
+        {isFirebaseSyncing && !onSyncCloud && (
           <div
             id="realtime-status-badge"
             className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#e6f6ee] text-[#009B4C] border border-[#a4e2c0] rounded-full text-[11px] font-bold shadow-xs"

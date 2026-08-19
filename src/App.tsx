@@ -20,6 +20,7 @@ import {
   subscribeToInventory,
   subscribeToSchoolSettings,
   subscribeToUsers,
+  fetchInventoryFromFirestore,
   saveInventoryItemToFirestore,
   deleteInventoryItemFromFirestore,
   saveSchoolSettingsToFirestore,
@@ -47,12 +48,25 @@ export default function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Test Firebase Firestore Connection on Mount
+  // Test Firebase Firestore Connection and Initial Cloud Fetch on Mount
   useEffect(() => {
     testConnection().then((connected) => {
       setIsFirebaseConnected(connected);
     });
+
+    // Initial direct fetch to ensure immediate cross-device sync
+    fetchInventoryFromFirestore()
+      .then((items) => {
+        if (items) {
+          setInventoryItems(items);
+          saveStoredInventory(items);
+        }
+      })
+      .catch((err) => {
+        console.warn('Initial direct fetch warning:', err);
+      });
   }, []);
 
   // Realtime Subscriptions to Firebase Firestore
@@ -87,6 +101,25 @@ export default function App() {
       unsubUsers();
     };
   }, []);
+
+  // Manual Cloud Sync Helper
+  const handleSyncCloudNow = async () => {
+    setIsSyncing(true);
+    try {
+      const items = await fetchInventoryFromFirestore();
+      if (items) {
+        setInventoryItems(items);
+        saveStoredInventory(items);
+        setIsFirebaseConnected(true);
+        showToast(`Sinkronisasi Cloud Berhasil! (${items.length} item aktif di database)`, 'success');
+      }
+    } catch (err) {
+      console.error('Manual sync error:', err);
+      showToast('Gagal menyinkronkan data dengan Firebase', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Persist current session locally
   useEffect(() => {
@@ -266,6 +299,8 @@ export default function App() {
               onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
               totalItemsCount={inventoryItems.length}
               isFirebaseSyncing={isFirebaseConnected}
+              onSyncCloud={handleSyncCloudNow}
+              isSyncing={isSyncing}
             />
 
             {/* View Switching Router */}
@@ -286,6 +321,8 @@ export default function App() {
                   onUpdateItem={handleUpdateItem}
                   onNavigateToInput={() => setActiveMenu('input')}
                   showToast={showToast}
+                  onSyncCloud={handleSyncCloudNow}
+                  isSyncing={isSyncing}
                 />
               )}
 
