@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
   getFirestore,
   collection,
@@ -12,12 +12,19 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 import { InventoryItem, SchoolSettings, User } from './types';
-import { DEFAULT_INVENTORY_ITEMS, DEFAULT_SCHOOL_SETTINGS, DEFAULT_USERS } from './utils/storage';
+import { DEFAULT_SCHOOL_SETTINGS, DEFAULT_USERS } from './utils/storage';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = firebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 export const auth = getAuth(app);
+
+// Automatically authenticate anonymously to ensure active realtime cloud connection across all devices
+signInAnonymously(auth).catch((err) => {
+  console.warn('[Firebase Auth] Anonymous login notice:', err);
+});
 
 export enum OperationType {
   CREATE = 'create',
@@ -82,6 +89,22 @@ export async function testConnection(): Promise<boolean> {
 // ==========================================
 // REALTIME INVENTORY REPOSITORY
 // ==========================================
+export function sanitizeInventoryItem(item: Partial<InventoryItem>): Record<string, any> {
+  return {
+    id: String(item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`),
+    name: String(item.name || '').trim(),
+    serial: String(item.serial || '').trim().toUpperCase(),
+    year: Number(item.year) || new Date().getFullYear(),
+    budget: String(item.budget || 'BOS Pusat'),
+    spec: String(item.spec || '-'),
+    photo: typeof item.photo === 'string' ? item.photo : '',
+    category: String(item.category || 'Umum'),
+    condition: String(item.condition || 'Baik'),
+    location: String(item.location || 'Sekolah'),
+    createdAt: item.createdAt || new Date().toISOString()
+  };
+}
+
 export function subscribeToInventory(
   onData: (items: InventoryItem[]) => void,
   onError?: (err: unknown) => void
@@ -91,37 +114,37 @@ export function subscribeToInventory(
 
   const unsubscribe = onSnapshot(
     collRef,
-    async (snapshot) => {
-      if (snapshot.empty) {
-        onData([]);
-        return;
-      }
-
+    (snapshot) => {
       const items: InventoryItem[] = [];
       const legacyDemoDocRefs: ReturnType<typeof doc>[] = [];
 
       snapshot.forEach((docSnap) => {
-        const itemData = docSnap.data() as InventoryItem;
+        const itemData = docSnap.data() as Partial<InventoryItem>;
         const itemId = String(itemData.id || docSnap.id);
 
-        // Identify legacy demo items (inv-1, inv-2, inv-3, inv-4, inv-5) to auto-clean
+        // Filter out legacy dummy sample records (inv-1 .. inv-5)
         if (itemId.startsWith('inv-') && /^inv-[1-5]$/.test(itemId)) {
           legacyDemoDocRefs.push(docSnap.ref);
         } else {
           items.push({
-            ...itemData,
-            id: itemId
+            id: itemId,
+            name: itemData.name || 'Barang Tanpa Nama',
+            serial: itemData.serial || itemId,
+            year: Number(itemData.year) || new Date().getFullYear(),
+            budget: itemData.budget || 'BOS Pusat',
+            spec: itemData.spec || '',
+            photo: itemData.photo || '',
+            category: itemData.category || 'Umum',
+            condition: itemData.condition || 'Baik',
+            location: itemData.location || 'Sekolah',
+            createdAt: itemData.createdAt || new Date().toISOString()
           });
         }
       });
 
-      // Automatically purge legacy sample items from Firestore if present
+      // Cleanup legacy sample items in background if any found
       if (legacyDemoDocRefs.length > 0) {
-        try {
-          await Promise.all(legacyDemoDocRefs.map((ref) => deleteDoc(ref)));
-        } catch (err) {
-          console.warn('Legacy demo items cleanup error:', err);
-        }
+        Promise.all(legacyDemoDocRefs.map((ref) => deleteDoc(ref))).catch(() => {});
       }
 
       // Sort newest created first
@@ -144,11 +167,13 @@ export function subscribeToInventory(
 }
 
 export async function saveInventoryItemToFirestore(item: InventoryItem): Promise<void> {
-  const path = `inventory_items/${item.id}`;
+  const sanitized = sanitizeInventoryItem(item);
+  const path = `inventory_items/${sanitized.id}`;
   try {
-    const docRef = doc(db, 'inventory_items', String(item.id));
-    await setDoc(docRef, { ...item, id: String(item.id) }, { merge: true });
+    const docRef = doc(db, 'inventory_items', sanitized.id);
+    await setDoc(docRef, sanitized, { merge: true });
   } catch (error) {
+    console.error('Failed to save inventory item to Firestore:', error);
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }

@@ -18,8 +18,8 @@ interface InputBarangProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
-// Compress and resize image client-side to ensure ultra-fast realtime cloud storage
-function compressImageFile(file: File, maxWidth = 800, quality = 0.75): Promise<string> {
+// Compress and resize image client-side to ensure ultra-fast realtime cloud storage (< 40KB)
+function compressImageFile(file: File, maxWidth = 500, quality = 0.65): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (event) => {
