@@ -120,7 +120,7 @@ export default function App() {
   };
 
   // Inventory Handlers (Realtime Firestore)
-  const handleAddItem = (newItem: InventoryItem): boolean => {
+  const handleAddItem = async (newItem: InventoryItem): Promise<boolean> => {
     const exists = inventoryItems.some(
       (item) => item.serial.toUpperCase() === newItem.serial.toUpperCase()
     );
@@ -130,25 +130,36 @@ export default function App() {
       return false;
     }
 
-    // Save to Firestore Realtime
-    saveInventoryItemToFirestore(newItem).catch((err) => {
+    try {
+      // Save to Firestore Realtime (broadcasts immediately to all devices via onSnapshot)
+      await saveInventoryItemToFirestore(newItem);
+      setInventoryItems((prev) => {
+        if (prev.some((item) => String(item.id) === String(newItem.id))) {
+          return prev;
+        }
+        return [newItem, ...prev];
+      });
+      showToast(`Barang "${newItem.name}" (${newItem.serial}) berhasil disimpan & disiarkan ke semua device!`, 'success');
+      return true;
+    } catch (err) {
       console.error('Error saving item to Firestore:', err);
-    });
-
-    setInventoryItems((prev) => [newItem, ...prev]);
-    showToast(`Barang "${newItem.name}" (${newItem.serial}) berhasil disimpan ke cloud realtime!`, 'success');
-    return true;
+      showToast('Gagal menyimpan barang ke cloud database. Cek koneksi.', 'error');
+      return false;
+    }
   };
 
-  const handleUpdateItem = (updatedItem: InventoryItem) => {
-    // Save to Firestore Realtime
-    saveInventoryItemToFirestore(updatedItem).catch((err) => {
+  const handleUpdateItem = async (updatedItem: InventoryItem) => {
+    try {
+      // Save to Firestore Realtime
+      await saveInventoryItemToFirestore(updatedItem);
+      setInventoryItems((prev) =>
+        prev.map((item) => (String(item.id) === String(updatedItem.id) ? updatedItem : item))
+      );
+      showToast('Perubahan data berhasil disinkronkan ke seluruh device!', 'success');
+    } catch (err) {
       console.error('Error updating item in Firestore:', err);
-    });
-
-    setInventoryItems((prev) =>
-      prev.map((item) => (String(item.id) === String(updatedItem.id) ? updatedItem : item))
-    );
+      showToast('Gagal memperbarui barang di cloud database.', 'error');
+    }
   };
 
   const handleDeleteItem = async (id: string | number) => {

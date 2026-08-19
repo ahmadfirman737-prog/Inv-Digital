@@ -93,33 +93,36 @@ export function subscribeToInventory(
     collRef,
     async (snapshot) => {
       if (snapshot.empty) {
-        // Check if database was already bootstrapped before
-        try {
-          const bootstrapDocRef = doc(db, 'system_metadata', 'bootstrap');
-          const metaSnap = await getDocFromServer(bootstrapDocRef);
-          if (!metaSnap.exists()) {
-            // First time ever: seed initial demo inventory and mark as bootstrapped
-            await seedDefaultInventory();
-            await setDoc(bootstrapDocRef, { initialized: true, createdAt: new Date().toISOString() });
-            onData(DEFAULT_INVENTORY_ITEMS);
-            return;
-          }
-        } catch {
-          // If error reading metadata, treat empty as truly empty
-        }
-        // Legitimate empty list (all items deleted)
         onData([]);
         return;
       }
 
       const items: InventoryItem[] = [];
+      const legacyDemoDocRefs: ReturnType<typeof doc>[] = [];
+
       snapshot.forEach((docSnap) => {
         const itemData = docSnap.data() as InventoryItem;
-        items.push({
-          ...itemData,
-          id: itemData.id || docSnap.id
-        });
+        const itemId = String(itemData.id || docSnap.id);
+
+        // Identify legacy demo items (inv-1, inv-2, inv-3, inv-4, inv-5) to auto-clean
+        if (itemId.startsWith('inv-') && /^inv-[1-5]$/.test(itemId)) {
+          legacyDemoDocRefs.push(docSnap.ref);
+        } else {
+          items.push({
+            ...itemData,
+            id: itemId
+          });
+        }
       });
+
+      // Automatically purge legacy sample items from Firestore if present
+      if (legacyDemoDocRefs.length > 0) {
+        try {
+          await Promise.all(legacyDemoDocRefs.map((ref) => deleteDoc(ref)));
+        } catch (err) {
+          console.warn('Legacy demo items cleanup error:', err);
+        }
+      }
 
       // Sort newest created first
       items.sort((a, b) => {
@@ -160,14 +163,15 @@ export async function deleteInventoryItemFromFirestore(id: string | number): Pro
   }
 }
 
-async function seedDefaultInventory(): Promise<void> {
+export async function clearAllInventoryFromFirestore(): Promise<void> {
+  const path = 'inventory_items';
   try {
-    for (const item of DEFAULT_INVENTORY_ITEMS) {
-      const docRef = doc(db, 'inventory_items', String(item.id));
-      await setDoc(docRef, item, { merge: true });
-    }
-  } catch (err) {
-    console.error('Error seeding default inventory:', err);
+    const collRef = collection(db, path);
+    const snap = await getDocs(collRef);
+    const deletePromises = snap.docs.map((docSnap) => deleteDoc(docSnap.ref));
+    await Promise.all(deletePromises);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
 

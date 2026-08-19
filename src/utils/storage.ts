@@ -29,84 +29,24 @@ export const DEFAULT_SCHOOL_SETTINGS: SchoolSettings = {
   logo: 'https://lh3.googleusercontent.com/d/1tyQ3LYEHPDAtib8NHZJJkii7Os1ota6t'
 };
 
-export const DEFAULT_INVENTORY_ITEMS: InventoryItem[] = [
-  {
-    id: 'inv-1',
-    name: 'Proyektor Epson EB-X51',
-    serial: 'EPS-2023-001',
-    year: 2023,
-    budget: 'BOS Pusat',
-    spec: 'Resolusi XGA, 3800 Lumens, HDMI, VGA, Termasuk Tas dan Remote.',
-    photo: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80',
-    category: 'Elektronik & Multimedia',
-    condition: 'Baik',
-    location: 'Lab Komputer 1',
-    createdAt: '2026-01-05T10:00:00.000Z'
-  },
-  {
-    id: 'inv-2',
-    name: 'Laptop Lenovo ThinkPad L14',
-    serial: 'LNV-2024-055',
-    year: 2024,
-    budget: 'BOS Daerah',
-    spec: 'Intel Core i5 Gen 12, RAM 16GB, SSD 512GB, Windows 11 Pro.',
-    photo: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&auto=format&fit=crop&q=80',
-    category: 'Komputer & IT',
-    condition: 'Baik',
-    location: 'Ruang Guru / Kurikulum',
-    createdAt: '2026-01-12T11:15:00.000Z'
-  },
-  {
-    id: 'inv-3',
-    name: 'Smart TV Samsung 55 Inch 4K',
-    serial: 'SMG-2024-019',
-    year: 2024,
-    budget: 'Yayasan',
-    spec: 'Crystal UHD 4K, HDR10+, Smart Hub, Bracket Dinding, Wi-Fi 5.',
-    photo: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&auto=format&fit=crop&q=80',
-    category: 'Elektronik & Multimedia',
-    condition: 'Baik',
-    location: 'Ruang Multimedia / Aula',
-    createdAt: '2026-02-01T08:30:00.000Z'
-  },
-  {
-    id: 'inv-4',
-    name: 'Printer Epson EcoTank L3210',
-    serial: 'EPS-2023-088',
-    year: 2023,
-    budget: 'BOS Pusat',
-    spec: 'All-in-One Ink Tank (Print, Scan, Copy), Borderless 4R, USB 2.0.',
-    photo: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&auto=format&fit=crop&q=80',
-    category: 'Perangkat Kantor',
-    condition: 'Baik',
-    location: 'Ruang Tata Usaha (TU)',
-    createdAt: '2026-02-10T14:20:00.000Z'
-  },
-  {
-    id: 'inv-5',
-    name: 'Mikroskop Binokuler Olympus CX23',
-    serial: 'OLY-2022-004',
-    year: 2022,
-    budget: 'Sumbangan / Hibah',
-    spec: 'Pembesaran 40x - 1000x, Lensa Achromat, Lampu LED Eco-friendly.',
-    photo: 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=600&auto=format&fit=crop&q=80',
-    category: 'Alat Laboratorium IPA',
-    condition: 'Baik',
-    location: 'Lab IPA',
-    createdAt: '2026-02-15T09:00:00.000Z'
-  }
-];
+export const DEFAULT_INVENTORY_ITEMS: InventoryItem[] = [];
 
 export function getStoredInventory(): InventoryItem[] {
   try {
     const raw = localStorage.getItem('kb_inventory_items');
     if (!raw) {
-      localStorage.setItem('kb_inventory_items', JSON.stringify(DEFAULT_INVENTORY_ITEMS));
-      return DEFAULT_INVENTORY_ITEMS;
+      localStorage.setItem('kb_inventory_items', JSON.stringify([]));
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // If it contains legacy mock items (id starting with 'inv-'), purge them
+    if (Array.isArray(parsed) && parsed.some((item) => String(item.id).startsWith('inv-'))) {
+      localStorage.setItem('kb_inventory_items', JSON.stringify([]));
+      return [];
+    }
+    return parsed;
   } catch {
-    return DEFAULT_INVENTORY_ITEMS;
+    return [];
   }
 }
 

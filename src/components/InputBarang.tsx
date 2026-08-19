@@ -13,9 +13,41 @@ import {
 } from 'lucide-react';
 
 interface InputBarangProps {
-  onAddItem: (item: InventoryItem) => boolean;
+  onAddItem: (item: InventoryItem) => Promise<boolean> | boolean;
   onNavigateToList: () => void;
   showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+}
+
+// Compress and resize image client-side to ensure ultra-fast realtime cloud storage
+function compressImageFile(file: File, maxWidth = 800, quality = 0.75): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(event.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(event.target?.result as string);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
 }
 
 export const InputBarang: React.FC<InputBarangProps> = ({
@@ -47,20 +79,20 @@ export const InputBarang: React.FC<InputBarangProps> = ({
     showToast(`Nomor seri otomatis dibuat: ${generated}`, 'info');
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        showToast('Ukuran foto terlalu besar! Maksimal 2MB.', 'error');
-        return;
+      try {
+        const compressedBase64 = await compressImageFile(file, 800, 0.75);
+        if (compressedBase64) {
+          setPhotoBase64(compressedBase64);
+          showToast('Foto berhasil dimuat & dioptimasi untuk cloud', 'info');
+        } else {
+          showToast('Gagal memproses file foto', 'error');
+        }
+      } catch {
+        showToast('Gagal memproses foto', 'error');
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setPhotoBase64(result);
-        showToast('Foto berhasil dimuat', 'info');
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -80,7 +112,7 @@ export const InputBarang: React.FC<InputBarangProps> = ({
     setPhotoBase64(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !serial.trim()) {
       showToast('Nama Barang dan Nomor Seri wajib diisi!', 'error');
@@ -90,7 +122,7 @@ export const InputBarang: React.FC<InputBarangProps> = ({
     setIsSubmitting(true);
 
     const newItem: InventoryItem = {
-      id: `inv-${Date.now()}`,
+      id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       name: name.trim(),
       serial: serial.trim().toUpperCase(),
       year: Number(year) || currentYear,
@@ -103,11 +135,13 @@ export const InputBarang: React.FC<InputBarangProps> = ({
       createdAt: new Date().toISOString()
     };
 
-    const success = onAddItem(newItem);
-    setIsSubmitting(false);
-
-    if (success) {
-      handleReset();
+    try {
+      const success = await onAddItem(newItem);
+      if (success) {
+        handleReset();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
