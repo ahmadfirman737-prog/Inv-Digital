@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { InventoryItem, SchoolSettings } from '../types';
 import { BarcodeRenderer, downloadBarcodeAsPng, downloadLabel12x8AsPng } from './BarcodeRenderer';
 import {
@@ -31,6 +31,7 @@ interface DataInventarisProps {
   showToast: (msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   onSyncCloud?: () => void;
   isSyncing?: boolean;
+  initialSearch?: string;
 }
 
 export const DataInventaris: React.FC<DataInventarisProps> = ({
@@ -41,9 +42,16 @@ export const DataInventaris: React.FC<DataInventarisProps> = ({
   onNavigateToInput,
   showToast,
   onSyncCloud,
-  isSyncing = false
+  isSyncing = false,
+  initialSearch = ''
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+  useEffect(() => {
+    if (initialSearch) {
+      setSearchQuery(initialSearch);
+    }
+  }, [initialSearch]);
   const [selectedBudget, setSelectedBudget] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   

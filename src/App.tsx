@@ -45,6 +45,7 @@ export default function App() {
   const [users, setUsers] = useState<User[]>(() => getStoredUsers());
   const [schoolSettings, setSchoolSettings] = useState<SchoolSettingsType>(() => getStoredSchoolSettings());
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('input');
+  const [inventorySearchQuery, setInventorySearchQuery] = useState<string>('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
@@ -319,10 +320,14 @@ export default function App() {
                   schoolSettings={schoolSettings}
                   onDeleteItem={handleDeleteItem}
                   onUpdateItem={handleUpdateItem}
-                  onNavigateToInput={() => setActiveMenu('input')}
+                  onNavigateToInput={() => {
+                    setInventorySearchQuery('');
+                    setActiveMenu('input');
+                  }}
                   showToast={showToast}
                   onSyncCloud={handleSyncCloudNow}
                   isSyncing={isSyncing}
+                  initialSearch={inventorySearchQuery}
                 />
               )}
 
@@ -330,6 +335,12 @@ export default function App() {
                 <ScanBarcode
                   items={inventoryItems}
                   showToast={showToast}
+                  onNavigateToInventory={(searchSerial) => {
+                    if (searchSerial) {
+                      setInventorySearchQuery(searchSerial);
+                    }
+                    setActiveMenu('list');
+                  }}
                 />
               )}
 
